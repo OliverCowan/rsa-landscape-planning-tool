@@ -47,3 +47,61 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Spatial data - rasters
+*.tif
+*.tiff
+*.img
+*.asc
+*.nc
+
+# Spatial data - vectors
+*.shp
+*.dbf
+*.sbn
+*.sbx
+*.prj
+*.cpg
+*.shx
+*.gpkg
+*.gdb/
+*.lyr
+*.lpk
+
+# Large R data objects
+*.rds
+*.Rds
+*.RDS
+
+# Large CSVs and tabular data
+data/raw/*.csv
+data/processed/*.csv
+
+# Outputs - solutions and maps
+outputs/solutions/
+outputs/maps/
+
+# Gurobi
+gurobi.lic
+*.lic
+
+# Sensitive config
+.env
+*_credentials*
+*_licence*
+*_password*
+
+# Windows and OneDrive artefacts
+Thumbs.db
+Desktop.ini
+*.tmp
+~$*
+.~lock.*
+
+# ArcGIS
+*.aprx.bak
+
+
+*.tbx
+__pycache__/
+*.pyc
