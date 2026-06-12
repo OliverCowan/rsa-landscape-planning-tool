@@ -56,17 +56,18 @@ rsconnect/
 *.nc
 
 # Spatial data - vectors
-*.shp
-*.dbf
-*.sbn
-*.sbx
-*.prj
-*.cpg
-*.shx
-*.gpkg
-*.gdb/
-*.lyr
-*.lpk
+# Spatial vectors - ignore in data folders except sample
+data/raw/*.shp
+data/raw/*.dbf
+data/raw/*.sbn
+data/raw/*.sbx
+data/raw/*.prj
+data/raw/*.cpg
+data/raw/*.shx
+data/raw/*.gpkg
+data/processed/*.shp
+data/processed/*.dbf
+data/processed/*.gpkg
 
 # Large R data objects
 *.rds
@@ -105,3 +106,10 @@ Desktop.ini
 *.tbx
 __pycache__/
 *.pyc
+
+# Allow sample data regardless of extension
+# Allow all sample data files
+!data/sample/
+!data/sample/**
+!data/sample/shapefile_zip/
+!data/sample/shapefile_zip/**
