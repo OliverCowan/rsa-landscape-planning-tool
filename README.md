@@ -15,14 +15,16 @@ The tool is built as an R Shiny web application and supports user-defined areas 
 ## Dependencies
 
 ### R packages
-- prioritizr 8.0.3
+
+- prioritizr 8.0.3 *(pinned — v8.1+ renames the `pu_id` field to `id`, which breaks this tool's downstream code; do not upgrade without also updating the affected scripts)*
 - terra, sf
 - shiny, leaflet
 - tidyverse
 - renv (package management)
 
 ### External
-- Gurobi 10.x (requires academic or commercial licence)
+
+- Gurobi 13.0.1 (requires academic or commercial licence)
 - ArcGIS Pro 3.6.1 (preprocessing scripts)
 
 ## Getting started
@@ -49,9 +51,9 @@ shiny::runApp("R/")
 
 ## Data
 
-Large spatial inputs are not tracked in this repository. Source data is maintained at:
-C:/Users/OliverCowan/OneDrive - EWT/Documents/02. Data Analyses/03. JRS 30x30/
-A small sample dataset for testing is available in `data/sample/`.
+Large spatial input layers are sourced from national and provincial custodians (including SANBI, DFFE, ESKOM, and DALRRD) and are not redistributed in this repository due to size and licensing restrictions. The full input layer inventory, including sources and reclassification methods, is documented in the Technical Reference Document (`docs/technical_reference/`).
+
+A small sample dataset for testing is provided in `data/sample/`. For access to the full compiled dataset, contact the author.
 
 ## Project structure
 rsa-landscape-planning-tool/
