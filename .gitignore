@@ -39,9 +39,6 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# pkgdown site
-docs/
-
 # translation temp files
 po/*~
 
@@ -105,3 +102,11 @@ Desktop.ini
 *.tbx
 __pycache__/
 *.pyc
+
+# Manuscript drafts: keep out of public repo until after acceptance
+docs/mee_paper/
+
+# Exceptions: small files that must be tracked
+!data/sample/**
+!outputs/sample_output/**
+!data/sa_national_template.tif
