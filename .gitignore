@@ -74,9 +74,9 @@ rsconnect/
 data/raw/*.csv
 data/processed/*.csv
 
-# Outputs - solutions and maps
-outputs/solutions/
-outputs/maps/
+# Outputs - everything except the tracked sample output
+outputs/*
+!outputs/sample_output/
 
 # Gurobi
 gurobi.lic
