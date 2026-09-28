@@ -28,17 +28,27 @@
 #       documented, and a given BLM was ~100x stronger in the app than in
 #       the calibration (08). Requires the matching change in app.R.
 #
+#   v2.1: Also copies each scope's boundary matrix (06c) and writes a scope
+#       outline into data/app (prepare_support_files()), so the app reads
+#       only from data/app. Replaces the separate data/provinces/.../
+#       precomputed and boundary files the app previously read.
+#
 # INPUT:
 #   data/planning_units/{scope}/pu_{scope}.gpkg          (from 06a + 06b)
+#   data/planning_units/{scope}/boundary_matrix_{scope}.rds (from 06c)
+#   data/boundaries/{scope}.shp (national: sa_national.shp)
 #   data/reclassified/{scope}/{zone}/{layer_id}.tif      (from 02)
 #   weights/{scope}_weights.csv                          (from 03a)
 #
 # OUTPUT:
 #   {APP_PU_DIR}/{scope}/spatial/planning_units.gpkg
+#   {APP_PU_DIR}/{scope}/precomputed/boundary_matrix.rds
+#   {APP_PU_DIR}/{scope}/spatial/boundary.gpkg
 #
 # USAGE:
 #   check_rasters("eastern_cape")        # confirm inputs exist
-#   prepare_province("eastern_cape")     # one scope
+#   prepare_province("eastern_cape")     # one scope (includes support files)
+#   prepare_support_files("eastern_cape")  # boundary matrix + outline only
 #   validate_province("eastern_cape")    # checks, incl. cost consistency
 #   prepare_all_provinces()              # all scopes (run overnight)
 #
@@ -64,6 +74,9 @@ base_dir       <- here::here()
 WF_PU_DIR      <- file.path(base_dir, "data/planning_units")
 WF_WEIGHTS_DIR <- file.path(base_dir, "weights")
 WF_RECLASS_DIR <- file.path(base_dir, "data/reclassified")
+WF_BOUNDS_DIR  <- file.path(base_dir, "data/boundaries")
+
+ALBERS_CRS <- "ESRI:102022"
 
 # Where the app reads its planning units from; must match app.R
 APP_PU_DIR     <- file.path(base_dir, "data/app/provinces")
@@ -96,6 +109,8 @@ prepare_province <- function(province, overwrite = FALSE) {
   out_path <- file.path(APP_PU_DIR, province, "spatial", "planning_units.gpkg")
   if (file.exists(out_path) && !overwrite) {
     cat("  Output already exists. Set overwrite = TRUE to reprocess.\n")
+    cat("  Refreshing support files only.\n")
+    prepare_support_files(province)
     return(invisible(NULL))
   }
 
@@ -209,7 +224,54 @@ prepare_province <- function(province, overwrite = FALSE) {
               basename(out_path), nrow(pu_out), ncol(pu_out) - 1,
               file.size(out_path) / 1e6))
 
+  prepare_support_files(province)
+
   invisible(pu_out)
+}
+
+# =============================================================================
+# SUPPORT FILES: boundary matrix and scope outline
+# =============================================================================
+# The app also needs, per scope, the 06c boundary matrix (BLM) and an outline
+# of the scope (preview map, clipping of display layers). Both are placed in
+# data/app so the app reads only from there. The matrix is copied unchanged:
+# prepare_province() keeps the 06a row order, so it stays aligned with the
+# planning units (the app also checks the dimensions).
+
+prepare_support_files <- function(province) {
+
+  scope_dir <- file.path(APP_PU_DIR, province)
+
+  # --- Boundary matrix (06c) ---
+  bm_src <- file.path(WF_PU_DIR, province, paste0("boundary_matrix_", province, ".rds"))
+  bm_dst <- file.path(scope_dir, "precomputed", "boundary_matrix.rds")
+  if (file.exists(bm_src)) {
+    dir.create(dirname(bm_dst), showWarnings = FALSE, recursive = TRUE)
+    file.copy(bm_src, bm_dst, overwrite = TRUE)
+    cat("  [OK] Boundary matrix copied\n")
+  } else {
+    cat("  [MISSING] Boundary matrix (run 06c):", bm_src, "\n")
+  }
+
+  # --- Scope outline (WGS84, lightly simplified; display only) ---
+  bnd_name <- if (province == "national") "sa_national" else province
+  bnd_src  <- file.path(WF_BOUNDS_DIR, paste0(bnd_name, ".shp"))
+  bnd_dst  <- file.path(scope_dir, "spatial", "boundary.gpkg")
+  if (file.exists(bnd_src)) {
+    outline <- st_read(bnd_src, quiet = TRUE) %>%
+      st_transform(ALBERS_CRS) %>%
+      st_union() %>%
+      st_simplify(dTolerance = 100, preserveTopology = TRUE) %>%
+      st_make_valid() %>%
+      st_transform(4326)
+    dir.create(dirname(bnd_dst), showWarnings = FALSE, recursive = TRUE)
+    st_write(st_sf(geometry = outline), bnd_dst, delete_dsn = TRUE, quiet = TRUE)
+    cat("  [OK] Scope outline written\n")
+  } else {
+    cat("  [MISSING] Boundary shapefile:", bnd_src, "\n")
+  }
+
+  invisible(NULL)
 }
 
 # =============================================================================
@@ -257,6 +319,15 @@ validate_province <- function(province) {
   cat("Locked PA   :", sum(pu$locked_pa,   na.rm = TRUE), "\n")
   cat("Locked REFS :", sum(pu$locked_refs, na.rm = TRUE), "\n")
   cat("Locked AGRI :", sum(pu$locked_agri, na.rm = TRUE), "\n")
+
+  bm_path <- file.path(APP_PU_DIR, province, "precomputed", "boundary_matrix.rds")
+  if (file.exists(bm_path)) {
+    bm_n <- nrow(readRDS(bm_path))
+    cat("Boundary mat:", bm_n, "rows",
+        if (bm_n == nrow(pu)) "[OK]" else "[FAIL: does not match PU count]", "\n")
+  } else {
+    cat("Boundary mat: [MISSING]\n")
+  }
 
   cat("\nCost consistency (default-weight rebuild vs workflow cost):\n")
   for (zone in ZONES) {
